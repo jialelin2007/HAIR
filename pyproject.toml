@@ -1,0 +1,25 @@
+[project]
+name = "HAIR"
+version = "0.1.0"
+description = "pyproject.toml for HAIR"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anywidget>=0.9.21",
+    "bm3d>=4.0.3",
+    "emd-signal>=1.9.0",
+    "ipykernel>=7.2.0",
+    "jax[cuda12]==0.6.2",
+    "jaxopt>=0.8.5",
+    "joblib>=1.5.3",
+    "matplotlib>=3.10.8",
+    "nbformat>=5.10.4",
+    "numpy>=2.4.3",
+    "plotly>=6.6.0",
+    "scipy>=1.17.1",
+    "spectral>=0.24",
+]
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true
