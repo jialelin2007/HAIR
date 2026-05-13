@@ -3,12 +3,9 @@ name = "HAIR"
 version = "0.1.0"
 description = "pyproject.toml for HAIR"
 readme = "README.md"
-license = "Apache-2.0"
+license = "PolyForm-Noncommercial-1.0.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.12"
-classifiers = [
-    "License :: OSI Approved :: Apache Software License",
-]
 dependencies = [
     "anywidget>=0.9.21",
     "bm3d>=4.0.3",
