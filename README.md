@@ -135,4 +135,11 @@ We will continue to announce related releases as the project progresses. In part
 
 ## License
 
-Please refer to the repository license file once the project is released. The public code excludes patent-restricted HADAR inversion components.
+The released code in this repository is licensed under the Apache License 2.0.
+See [`LICENSE`](./LICENSE) for details.
+
+The Apache License 2.0 applies only to the materials released in this
+repository. The core HADAR TeX inversion module is not included in this public
+release due to patent and intellectual-property restrictions, and this license
+does not cover unreleased HADAR inversion implementations, separately released
+datasets, trademarks, or third-party materials.
