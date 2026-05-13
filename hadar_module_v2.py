@@ -488,5 +488,7 @@ def plot_hsi(
     return fig, last_selected_point
 
 
-def hadar_solver_v2(working_wav, hsi_wav, calibrated_sky, hsi_denoised, solver_config):
+def hadar_solver_v2(
+    working_wav, hsi_wav, calibrated_sky, hsi_denoised, good_band_indices, solver_config
+):
     pass
