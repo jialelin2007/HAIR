@@ -1,285 +1,71 @@
-from PyEMD import EMD
+import os
+
 import numpy as np
-import scipy.io
 import plotly.graph_objects as go
+import scipy.io
+import spectral
 from plotly.subplots import make_subplots
+from PyEMD import EMD
+from matplotlib import pyplot as plt
 
 
 def load_data(
     filepath,
-    HSI_file_name,
+    hsi_file_name,
+    hsi_extension_name,
     value2radiance=1,
-    HSI_mat_dict_name="hsi",
 ):
-    wav_unit = "micrometer"
-    hsi = (
-        scipy.io.loadmat(filepath + HSI_file_name + ".mat")[HSI_mat_dict_name]
-        * value2radiance
-    )
-    hsi_wav = np.asarray(
-        [
-            8.057200,
-            8.077100,
-            8.097000,
-            8.116900,
-            8.136800,
-            8.156700,
-            8.176600,
-            8.196500,
-            8.216400,
-            8.236300,
-            8.256200,
-            8.276100,
-            8.296000,
-            8.315900,
-            8.335800,
-            8.355700,
-            8.375600,
-            8.395500,
-            8.415400,
-            8.435300,
-            8.455200,
-            8.475100,
-            8.495000,
-            8.514900,
-            8.534800,
-            8.554700,
-            8.574600,
-            8.594500,
-            8.614400,
-            8.634300,
-            8.654200,
-            8.674100,
-            8.694000,
-            8.713900,
-            8.733800,
-            8.753700,
-            8.773600,
-            8.793500,
-            8.813400,
-            8.833300,
-            8.853200,
-            8.873100,
-            8.893000,
-            8.912900,
-            8.932800,
-            8.952700,
-            8.972600,
-            8.992500,
-            9.012400,
-            9.032300,
-            9.052200,
-            9.072100,
-            9.092000,
-            9.111900,
-            9.131800,
-            9.151700,
-            9.171600,
-            9.191500,
-            9.211400,
-            9.231300,
-            9.251200,
-            9.271100,
-            9.291000,
-            9.310900,
-            9.330800,
-            9.350700,
-            9.370600,
-            9.390500,
-            9.410400,
-            9.430300,
-            9.450200,
-            9.470100,
-            9.490000,
-            9.509900,
-            9.529800,
-            9.549700,
-            9.569600,
-            9.589500,
-            9.609400,
-            9.629300,
-            9.649200,
-            9.669100,
-            9.689000,
-            9.708900,
-            9.728800,
-            9.748700,
-            9.768600,
-            9.788500,
-            9.808400,
-            9.828300,
-            9.848200,
-            9.868100,
-            9.888000,
-            9.907900,
-            9.927800,
-            9.947700,
-            9.967600,
-            9.987500,
-            10.007400,
-            10.027300,
-            10.047200,
-            10.067100,
-            10.087000,
-            10.106900,
-            10.126800,
-            10.146700,
-            10.166600,
-            10.186500,
-            10.206400,
-            10.226300,
-            10.246200,
-            10.266100,
-            10.286000,
-            10.305900,
-            10.325800,
-            10.345700,
-            10.365600,
-            10.385500,
-            10.405400,
-            10.425300,
-            10.445200,
-            10.465100,
-            10.485000,
-            10.504900,
-            10.524800,
-            10.544700,
-            10.564600,
-            10.584500,
-            10.604400,
-            10.624300,
-            10.644200,
-            10.664100,
-            10.684000,
-            10.703900,
-            10.723800,
-            10.743700,
-            10.763600,
-            10.783500,
-            10.803400,
-            10.823300,
-            10.843200,
-            10.863100,
-            10.883000,
-            10.902900,
-            10.922800,
-            10.942700,
-            10.962600,
-            10.982500,
-            11.002400,
-            11.022300,
-            11.042200,
-            11.062100,
-            11.082000,
-            11.101900,
-            11.121800,
-            11.141700,
-            11.161600,
-            11.181500,
-            11.201400,
-            11.221300,
-            11.241200,
-            11.261100,
-            11.281000,
-            11.300900,
-            11.320800,
-            11.340700,
-            11.360600,
-            11.380500,
-            11.400400,
-            11.420300,
-            11.440200,
-            11.460100,
-            11.480000,
-            11.499900,
-            11.519800,
-            11.539700,
-            11.559600,
-            11.579500,
-            11.599400,
-            11.619300,
-            11.639200,
-            11.659100,
-            11.679000,
-            11.698900,
-            11.718800,
-            11.738700,
-            11.758600,
-            11.778500,
-            11.798400,
-            11.818300,
-            11.838200,
-            11.858100,
-            11.878000,
-            11.897900,
-            11.917800,
-            11.937700,
-            11.957600,
-            11.977500,
-            11.997400,
-            12.017300,
-            12.037200,
-            12.057100,
-            12.077000,
-            12.096900,
-            12.116800,
-            12.136700,
-            12.156600,
-            12.176500,
-            12.196400,
-            12.216300,
-            12.236200,
-            12.256100,
-            12.276000,
-            12.295900,
-            12.315800,
-            12.335700,
-            12.355600,
-            12.375500,
-            12.395400,
-            12.415300,
-            12.435200,
-            12.455100,
-            12.475000,
-            12.494900,
-            12.514800,
-            12.534700,
-            12.554600,
-            12.574500,
-            12.594400,
-            12.614300,
-            12.634200,
-            12.654100,
-            12.674000,
-            12.693900,
-            12.713800,
-            12.733700,
-            12.753600,
-            12.773500,
-            12.793400,
-            12.813300,
-            12.833200,
-            12.853100,
-            12.873000,
-            12.892900,
-            12.912800,
-            12.932700,
-            12.952600,
-            12.972500,
-            12.992400,
-            13.012300,
-            13.032200,
-            13.052100,
-            13.072000,
-            13.091900,
-            13.111800,
-            13.131700,
-        ]
-    )
+    if hsi_extension_name == "bsq":
+        wav_unit = "micrometer"
+        path = os.path.join(filepath, hsi_file_name)
+        hdr_path = f"{path}.hdr"
+        bsq_path = f"{path}.{hsi_extension_name}"
+
+        sploader = spectral.io.envi.open(hdr_path, bsq_path)
+        hsi = sploader.load() * value2radiance
+        hsi_wav = np.array(sploader.bands.centers)
+
+    elif hsi_extension_name == "sc":
+        wav_unit = "wavenumber"
+        path = os.path.join(filepath, hsi_file_name)
+        hdr_path = f"{path}.hdr"
+        sc_path = f"{path}.{hsi_extension_name}"
+        sploader = spectral.io.envi.open(hdr_path, sc_path)
+        hsi = sploader.load() * value2radiance
+        hsi_wav = np.array(sploader.bands.centers)
+
+    elif hsi_extension_name == "dat":
+        wav_unit = "micrometer"
+        path = os.path.join(filepath, hsi_file_name)
+        hdr_path = f"{path}.hdr"
+        bsq_path = f"{path}.{hsi_extension_name}"
+        sploader = spectral.io.envi.open(hdr_path, bsq_path)
+        hsi = sploader.load() * value2radiance
+        hsi_wav = np.array(sploader.bands.centers)
+    else:
+        raise ValueError(f"Unsupported HSI extension name: {hsi_extension_name}")
     print(
-        f"Hyperspectral image shape: {hsi.shape}, Range: {np.min(hsi)} - {np.max(hsi)}, Wavelength unit: {wav_unit}"
+        f"Shape of HSI: {hsi.shape}, range: {np.min(hsi)} - {np.max(hsi)}, wavelength unit: {wav_unit}, wavelength range: {hsi_wav.min()} - {hsi_wav.max()}"
     )
+
     return hsi, hsi_wav, wav_unit
+
+
+def wavenumber_to_wavelength(hsi_wav, hsi):
+    hsi_wav = np.asarray(hsi_wav, dtype=float)
+    hsi = np.asarray(hsi, dtype=float)
+    wav_um = 1e4 / hsi_wav
+    scale = (hsi_wav**2) / 1e4
+    hsi_wav_um = hsi * scale
+    sort_idx = np.argsort(wav_um)
+    wav_um = wav_um[sort_idx]
+    hsi_wav_um = np.take(hsi_wav_um, sort_idx, axis=-1)
+    return wav_um, hsi_wav_um
+
+
+def get_config():
+    pass
+
 
 def plot_T_map(T_map, base_height: int = 300):
     T_map = np.array(T_map)
@@ -432,14 +218,101 @@ def plot_bright_map(
     return fig
 
 
-def process_sky_spectrum(hsi, sky_pixel, final_IMF_index=-1):
-    sky = hsi[sky_pixel[0], sky_pixel[1], :]
-    emd = EMD()
-    IMFs = emd(sky)
-    n0 = np.sum(IMFs[0:final_IMF_index, :], axis=0)
-    min_s = np.min(n0)
-    n0 = n0 - min_s + 1e-3
-    return n0, IMFs
+def process_sky_spectrum(
+    hsi=None,
+    sky=None,
+    sky_pixel=[0, 0],
+    method="ALS",
+    lam=1e4,
+    p=0.01,
+    niter=50,
+    last_IMF=-1,
+):
+    if method == "EMD":
+        if sky is None:
+            sky = hsi[sky_pixel[0], sky_pixel[1], :]
+        emd = EMD()
+        IMFs = emd(sky)
+        n0 = np.sum(IMFs[0:last_IMF, :], axis=0)
+        n0 = n0 - np.min(n0)
+        thermal_baseline = sky - n0
+        num_imf = IMFs.shape[0]
+        total_plots = num_imf + 1
+        cols = 4
+        rows = int(np.ceil(total_plots / cols))
+        fig, axes = plt.subplots(rows, cols, figsize=(25, 4 * rows))
+        axes = np.atleast_1d(axes).ravel()
+        for idx in range(rows * cols):
+            ax = axes[idx]
+            if idx < num_imf:
+                ax.plot(IMFs[idx, :])
+                ax.set_title(f"IMF {idx + 1}")
+                ax.grid(True)
+            elif idx == num_imf:
+                ax.plot(n0)
+                ax.set_title(f"Sky (sum first {num_imf - last_IMF} IMFs)")
+                ax.grid(
+                    which="both",
+                    color="black",
+                    linestyle="-",
+                    linewidth=0.5,
+                    alpha=0.7,
+                )
+                ax.minorticks_on()
+            else:
+                ax.axis("off")
+        fig.tight_layout()
+        plt.show()
+
+    elif method == "ALS":
+        if sky is None:
+            sky = hsi[sky_pixel[0], sky_pixel[1], :]
+        sky = np.asarray(sky, dtype=float)
+        L = sky.size
+
+        D = np.diff(np.eye(L), 2, axis=0)
+        penalty = lam * (D.T @ D)
+        w = np.ones(L)
+
+        for _ in range(niter):
+            W = np.diag(w)
+            Z = W + penalty
+            z = np.linalg.solve(Z, w * sky)
+            w = p * (sky > z) + (1 - p) * (sky < z)
+
+        thermal_baseline = z
+        n0 = sky - thermal_baseline
+
+        fig, axes = plt.subplots(1, 2, figsize=(18, 5))
+
+        axes[0].plot(sky, label="Original Spectrum", color="b", alpha=0.8)
+        axes[0].plot(
+            thermal_baseline, label="ALS Thermal Baseline", color="r", linewidth=2
+        )
+        axes[0].set_title("ALS Separation: Original vs Baseline")
+        axes[0].legend()
+        axes[0].grid(True, alpha=0.3)
+
+        axes[1].plot(n0, color="r")
+        axes[1].set_title("Extracted Sky Signal")
+        axes[1].grid(
+            which="both", color="black", linestyle="-", linewidth=0.5, alpha=0.7
+        )
+        axes[1].minorticks_on()
+        fig.tight_layout()
+
+    elif method == "direct":
+        plt.plot(sky, label="Sky", color="black")
+        plt.title("Sky")
+        plt.xlabel("Pixel")
+        plt.ylabel("Intensity")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.show()
+        n0 = sky
+        thermal_baseline = None
+
+    return n0, thermal_baseline
 
 
 def generate_planck_lut(wavelengths, config, wav_unit="micrometer"):
@@ -481,3 +354,139 @@ def generate_planck_lut(wavelengths, config, wav_unit="micrometer"):
                 / T**2
             )
     return B_lut, dBdT_lut
+
+
+def plot_hsi(
+    hsi,
+    hsi_wav,
+    band_idx=127,
+    base_height: int = 300,
+    spectra_ratio: float = 0.4,
+):
+    hsi = np.asarray(hsi)
+    hsi_wav = np.asarray(hsi_wav)
+
+    if hsi.ndim == 2:
+        hsi = hsi[..., None]
+
+    h, w, C = hsi.shape
+
+    band_idx = int(np.clip(band_idx, 0, C - 1))
+    img = hsi[..., band_idx]
+
+    aspect_ratio = w / h
+
+    img_height = int(base_height)
+    img_width = max(1, int(round(img_height * aspect_ratio)))
+
+    spec_height = max(1, int(round(img_height * spectra_ratio / (1 - spectra_ratio))))
+    total_height = img_height + spec_height
+    total_width = img_width
+
+    max_spectra = 5
+
+    base_fig = make_subplots(
+        rows=2,
+        cols=1,
+        subplot_titles=(f"Band {band_idx + 1} ({w}x{h})", "Spectra"),
+        row_heights=[1 - spectra_ratio, spectra_ratio],
+        vertical_spacing=0.08,
+    )
+
+    base_fig.add_trace(
+        go.Heatmap(
+            z=img,
+            colorscale="Gray",
+            showscale=False,
+            hovertemplate="x: %{x}<br>y: %{y}<br>Value: %{z:.4f}<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    for _ in range(max_spectra):
+        base_fig.add_trace(
+            go.Scattergl(
+                x=[],
+                y=[],
+                mode="lines",
+                name="",
+                visible=False,
+                showlegend=False,
+                hovertemplate="Wavelength: %{x}<br>Radiance: %{y:.4f}<extra></extra>",
+            ),
+            row=2,
+            col=1,
+        )
+
+    base_fig.update_yaxes(
+        title_text="y (rows)",
+        autorange="reversed",
+        scaleanchor="x",
+        scaleratio=1,
+        row=1,
+        col=1,
+    )
+    base_fig.update_xaxes(title_text="x (cols)", row=1, col=1)
+
+    base_fig.update_xaxes(title_text="Wavelength", row=2, col=1)
+    base_fig.update_yaxes(title_text="Radiance", row=2, col=1)
+
+    base_fig.update_layout(
+        height=total_height,
+        width=total_width,
+        showlegend=True,
+        margin=dict(l=20, r=20, t=50, b=20),
+        legend=dict(x=1.01, y=1.0),
+        uirevision=True,
+    )
+
+    fig = go.FigureWidget(base_fig)
+
+    spectrum_count = 0
+    last_selected_point = [None, None]
+
+    def _set_trace(trace_obj, x, y, name, visible=True):
+        trace_obj.x = x
+        trace_obj.y = y
+        trace_obj.name = name
+        trace_obj.visible = visible
+        trace_obj.showlegend = visible
+
+    def add_spectrum(x_idx: int, y_idx: int):
+        nonlocal spectrum_count
+        spec = hsi[y_idx, x_idx, :]
+
+        with fig.batch_update():
+            if spectrum_count < max_spectra:
+                target_trace = fig.data[1 + spectrum_count]
+                _set_trace(target_trace, hsi_wav, spec, f"({x_idx},{y_idx})")
+                spectrum_count += 1
+            else:
+                for i in range(1, max_spectra):
+                    src = fig.data[i + 1]
+                    dst = fig.data[i]
+                    dst.x = src.x
+                    dst.y = src.y
+                    dst.name = src.name
+                    dst.visible = src.visible
+                    dst.showlegend = src.showlegend
+                _set_trace(fig.data[max_spectra], hsi_wav, spec, f"({x_idx},{y_idx})")
+
+    def handle_click(trace, points, state):
+        if not points.point_inds:
+            return
+        x_idx = int(points.xs[0])
+        y_idx = int(points.ys[0])
+        if 0 <= x_idx < w and 0 <= y_idx < h:
+            last_selected_point[0] = x_idx
+            last_selected_point[1] = y_idx
+            add_spectrum(x_idx, y_idx)
+
+    fig.data[0].on_click(handle_click)
+
+    return fig, last_selected_point
+
+
+def hadar_solver_v2(working_wav, hsi_wav, calibrated_sky, hsi_denoised, solver_config):
+    pass

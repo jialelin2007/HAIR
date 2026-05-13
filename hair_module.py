@@ -1,14 +1,14 @@
-import numpy as np
-import jax.numpy as jnp
+from functools import partial
+
 import jax
+import jax.numpy as jnp
 import matplotlib.pyplot as plt
+import numpy as np
+from bm3d import bm3d
+from joblib import Parallel, delayed
 from matplotlib.patches import Patch
 from scipy.interpolate import UnivariateSpline
 from scipy.ndimage import gaussian_filter1d
-from scipy.optimize import least_squares
-from functools import partial
-from bm3d import bm3d
-from joblib import Parallel, delayed
 
 
 def interpolate_emmisivity(e_pixel, good_band_indices, all_band_indices):
@@ -22,30 +22,6 @@ def interpolate_emmisivity_vmap(e_sparse, good_band_indices, all_band_indices):
         e_sparse, good_band_indices, all_band_indices
     )
     return e_full
-
-
-def get_sky_pixel(index):
-    if index == 1:
-        sky_pixel = (143, 1198)
-    elif index == 2:
-        sky_pixel = (220, 1100)
-    elif index == 3:
-        sky_pixel = (223, 1020)
-    elif index == 4:
-        sky_pixel = (220, 750)
-    elif index == 5:
-        sky_pixel = (122, 815)
-    elif index == 6:
-        sky_pixel = (120, 425)
-    elif index == 7:
-        sky_pixel = (200, 354)
-    elif index == 8:
-        sky_pixel = (182, 1240)
-    elif index == 9:
-        sky_pixel = (185, 452)
-    elif index == 10:
-        sky_pixel = (165, 997)
-    return sky_pixel
 
 
 def interpolate_sky(S_sky, good_indices, all_indices):
@@ -62,23 +38,26 @@ def detect_noisy_bands(
     plot=True,
 ):
     H, W, C = hsi_data.shape
-    row_means = np.mean(hsi_data, axis=1)
-    row_means_smooth = gaussian_filter1d(
-        row_means, sigma=smooth_sigma, axis=0, mode="nearest"
+    spatial_means = np.mean(hsi_data, axis=1)
+    spatial_len = H
+    line_label = "row"
+    spatial_means_smooth = gaussian_filter1d(
+        spatial_means, sigma=smooth_sigma, axis=0, mode="nearest"
     )
-    stripe_strengths = np.sqrt(np.mean((row_means - row_means_smooth) ** 2, axis=0))
-    mean_prev = row_means[:-2, :]
-    mean_current = row_means[1:-1, :]
-    mean_next = row_means[2:, :]
-    higher_than_neighbors = (mean_current > row_mean_threshold * mean_prev) & (
-        mean_current > row_mean_threshold * mean_next
+    residual = spatial_means - spatial_means_smooth
+    stripe_strengths = np.sqrt(np.mean(residual**2, axis=0))
+    prev_lines = spatial_means[:-2, :]
+    curr_lines = spatial_means[1:-1, :]
+    next_lines = spatial_means[2:, :]
+    higher_mask = (curr_lines > row_mean_threshold * prev_lines) & (
+        curr_lines > row_mean_threshold * next_lines
     )
-    lower_than_neighbors = (mean_current * row_mean_threshold < mean_prev) & (
-        mean_current * row_mean_threshold < mean_next
+    lower_mask = (curr_lines * row_mean_threshold < prev_lines) & (
+        curr_lines * row_mean_threshold < next_lines
     )
-    problem_mask = higher_than_neighbors | lower_than_neighbors
-    problem_row_count = np.sum(problem_mask, axis=0)
-    noisy_mask = (problem_row_count / H) >= band_problem_ratio
+    problem_mask = higher_mask | lower_mask
+    problem_line_count = np.sum(problem_mask, axis=0)
+    noisy_mask = (problem_line_count / spatial_len) >= band_problem_ratio
     noisy_band_indices = np.where(noisy_mask)[0].tolist()
     noisy_band_ratio = len(noisy_band_indices) / C
     if noisy_band_ratio > max_bad_band_ratio:
@@ -86,17 +65,17 @@ def detect_noisy_bands(
         top_indices = np.argsort(stripe_strengths)[-max_bad_bands:]
         noisy_band_indices = sorted(top_indices.tolist())
         print(
-            f"Detected bad band ratio {noisy_band_ratio:.3f},"
-            f"take the worst {max_bad_bands} bands to be bad bands"
+            f"Warning: detected noisy band ratio = {noisy_band_ratio:.3f}, "
+            f"which exceeds the maximum allowed ratio = {max_bad_band_ratio:.3f}. "
+            f"Only the top {max_bad_bands} bands with strongest noise are kept."
         )
     else:
-        print(f" {len(noisy_band_indices)} bad bands detected")
-
+        print(f"Detection completed: {len(noisy_band_indices)} noisy bands found.")
     if plot:
         band_indices = np.arange(C)
         noisy_set = set(noisy_band_indices)
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 6), sharex=True)
         colors = ["C1" if b in noisy_set else "C0" for b in band_indices]
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 6), sharex=True)
         ax1.bar(band_indices, stripe_strengths, color=colors, width=0.8, alpha=0.8)
         ax1.set_ylabel("Stripe noise strength")
         ax1.set_title("Noise score per band (stripe strength)")
@@ -108,23 +87,23 @@ def detect_noisy_bands(
             ],
             loc="upper right",
         )
-        ax2.bar(band_indices, problem_row_count, color=colors, width=0.8, alpha=0.8)
-        threshold_rows = int(np.ceil(band_problem_ratio * H))
+        ax2.bar(band_indices, problem_line_count, color=colors, width=0.8, alpha=0.8)
+        threshold_lines = int(np.ceil(band_problem_ratio * spatial_len))
         ax2.axhline(
-            y=threshold_rows,
+            y=threshold_lines,
             color="gray",
             linestyle="--",
             alpha=0.7,
-            label=f"Threshold ({threshold_rows} rows)",
+            label=f"Threshold ({threshold_lines} {line_label}s)",
         )
         ax2.set_xlabel("Band index")
-        ax2.set_ylabel("Problem row count")
-        ax2.set_title("Noisy row count per band")
+        ax2.set_ylabel(f"Problem {line_label} count")
+        ax2.set_title(f"Noisy {line_label} count per band")
         ax2.legend(loc="upper right")
         ax2.grid(True, alpha=0.3)
+
         plt.tight_layout()
         plt.show()
-
     return noisy_band_indices, stripe_strengths
 
 
@@ -395,117 +374,190 @@ def denoise(img, k_subspace=None, n_jobs=-1):
     return image_fasthyde
 
 
-def _generate_srf(wl_axis, center_wl, fwhm):
-    sigma = max(fwhm / (2.0 * np.sqrt(2.0 * np.log(2.0))), 1e-5)
-    srf = np.exp(-0.5 * ((wl_axis - center_wl) / sigma) ** 2)
-    area = np.trapezoid(srf, wl_axis)
-    if area <= 1e-12:
-        return srf
-    return srf / area
+_FWHM_TO_SIGMA = 2.0 * jnp.sqrt(2.0 * jnp.log(2.0))
 
 
-def _forward_model_constant_srf(params, bands_idx, wl_ref, signal_ref_normalized):
+@jax.jit
+def trapz(y, x):
+    dx = jnp.diff(x)
+    return jnp.sum(0.5 * (y[..., 1:] + y[..., :-1]) * dx, axis=-1)
+
+
+def z_norm(x):
+    x = np.asarray(x, dtype=np.float32)
+    x_mean = np.mean(x)
+    x_std = np.std(x)
+    if x_std < 1e-12:
+        x_std = 1e-12
+    x_z = (x - x_mean) / x_std
+    return x_z, x_mean, x_std
+
+
+@jax.jit
+def forward_model_constant_srf(params, bands_idx, wl_ref, signal_ref_z):
     c0, c1, c2, w = params
-    signal_sim = np.zeros(len(bands_idx))
-    for i, band in enumerate(bands_idx):
-        center_wl = c0 + c1 * band + c2 * (band**2)
-        srf = _generate_srf(wl_ref, center_wl, w)
-        signal_sim[i] = np.trapezoid(signal_ref_normalized * srf, wl_ref)
+
+    sigma = jnp.maximum(w / _FWHM_TO_SIGMA, 1e-6)
+    centers = c0 + c1 * bands_idx + c2 * (bands_idx**2)
+
+    wl_diff = (wl_ref[None, :] - centers[:, None]) / sigma
+    srf = jnp.exp(-0.5 * (wl_diff**2))
+    area = trapz(srf, wl_ref)
+    srf_norm = srf / jnp.maximum(area[:, None], 1e-12)
+
+    signal_sim = trapz(signal_ref_z[None, :] * srf_norm, wl_ref)
     return signal_sim
 
 
-def _correct_band_objective(
-    params, bands_idx, wl_ref, signal_ref_normalized, signal_measured_normalized
-):
-    signal_sim = _forward_model_constant_srf(
-        params, bands_idx, wl_ref, signal_ref_normalized
-    )
-    std_sim = max(np.std(signal_sim), 1e-12)
-    std_meas = max(np.std(signal_measured_normalized), 1e-12)
-    sim_z = (signal_sim - np.mean(signal_sim)) / std_sim
-    meas_z = (
-        signal_measured_normalized - np.mean(signal_measured_normalized)
-    ) / std_meas
-    return sim_z - meas_z
+@jax.jit
+def correct_band_score(params, bands_idx, wl_ref, signal_ref_z, signal_measured_z):
+    signal_sim = forward_model_constant_srf(params, bands_idx, wl_ref, signal_ref_z)
+    residual = signal_sim - signal_measured_z
+    return jnp.sum(residual**2)
 
 
-def correct_band(sky, wav, path_to_ref_sky):
-    wl_ref_highres, sky_ref_highres = np.loadtxt(path_to_ref_sky, unpack=True)
-    if np.mean(wl_ref_highres) > 1000:
-        wl_ref_highres = wl_ref_highres / 1000.0
-    if np.mean(wav) > 1000:
-        wav = wav / 1000.0
-    N_bands = len(wav)
-    bands_idx = np.arange(N_bands)
-    sky_ref_norm = (sky_ref_highres - sky_ref_highres.min()) / (
-        sky_ref_highres.max() - sky_ref_highres.min() + 1e-12
+batch_correct_band_score = jax.jit(
+    jax.vmap(
+        correct_band_score,
+        in_axes=(0, None, None, None, None),
     )
-    sky_norm = (sky - sky.min()) / (sky.max() - sky.min() + 1e-12)
+)
+
+
+def correct_band(sky, wav, path_to_ref_sky, show_plot=True):
+    sky = np.asarray(sky, dtype=np.float32)
+    wav = np.asarray(wav, dtype=np.float32)
+
+    wl_ref_highres, sky_ref_highres = np.loadtxt(
+        path_to_ref_sky, usecols=(0, 1), unpack=True
+    )
+    wl_ref_highres = np.asarray(wl_ref_highres, dtype=np.float32)
+    sky_ref_highres = np.asarray(sky_ref_highres, dtype=np.float32)
+
+    wl_ref_highres = wl_ref_highres / 1000.0
+
+    wav_min = float(np.min(wav)) - 0.02
+    wav_max = float(np.max(wav)) + 0.02
+    overlap_mask = (wl_ref_highres >= wav_min) & (wl_ref_highres <= wav_max)
+
+    wl_ref_highres = wl_ref_highres[overlap_mask]
+    sky_ref_highres = sky_ref_highres[overlap_mask]
+
+    sky_ref_z, ref_mean, ref_std = z_norm(sky_ref_highres)
+    sky_z, _, _ = z_norm(sky)
+
+    n_bands = wav.size
+    bands_idx = np.arange(n_bands, dtype=np.float32)
+
     c0_guess = float(wav[0])
-    c1_guess = (float(wav[-1]) - float(wav[0])) / max(N_bands - 1, 1)
-    print(c0_guess, c1_guess)
-    c2_guess = 0.0
-    w_guess = 0.02
-    initial_params = [c0_guess, c1_guess, c2_guess, w_guess]
-    initial_params = [7.9921, 0.01991, 0.0000002, 0.0233]
-    lower_bounds = [c0_guess - 0.5, c1_guess * 0.5, -1e-3, 0.01]
-    upper_bounds = [c0_guess + 0.5, c1_guess * 1.5, 1e-3, 0.2]
-    result = least_squares(
-        _correct_band_objective,
-        x0=initial_params,
-        bounds=(lower_bounds, upper_bounds),
-        args=(bands_idx, wl_ref_highres, sky_ref_norm, sky_norm),
-        verbose=0,
+    c1_guess = float((wav[-1] - wav[0]) / (n_bands - 1))
+
+    lower_bounds = np.array(
+        [c0_guess - 0.08, c1_guess * 0.9, -1e-6, 0.01],
+        dtype=np.float32,
     )
-    c0_opt, c1_opt, c2_opt, w_opt = result.x
+    upper_bounds = np.array(
+        [c0_guess + 0.08, c1_guess * 1.1, 1e-6, 0.05],
+        dtype=np.float32,
+    )
+
+    global_lower_bounds = lower_bounds.copy()
+    global_upper_bounds = upper_bounds.copy()
+
+    best_params = None
+    best_score = np.inf
+
+    bands_idx_jax = jnp.asarray(bands_idx)
+    wl_ref_jax = jnp.asarray(wl_ref_highres)
+    sky_ref_z_jax = jnp.asarray(sky_ref_z)
+    sky_z_jax = jnp.asarray(sky_z)
+
+    grid_levels = [10, 10, 10]
+
+    for level, n_points in enumerate(grid_levels):
+        c0_grid = np.linspace(
+            lower_bounds[0], upper_bounds[0], n_points, dtype=np.float32
+        )
+        c1_grid = np.linspace(
+            lower_bounds[1], upper_bounds[1], n_points, dtype=np.float32
+        )
+        c2_grid = np.linspace(
+            lower_bounds[2], upper_bounds[2], n_points, dtype=np.float32
+        )
+        w_grid = np.linspace(
+            lower_bounds[3], upper_bounds[3], n_points, dtype=np.float32
+        )
+
+        C0, C1, C2, W = np.meshgrid(c0_grid, c1_grid, c2_grid, w_grid, indexing="ij")
+        params_grid = np.stack((C0, C1, C2, W), axis=-1).reshape(-1, 4)
+
+        scores = batch_correct_band_score(
+            jnp.asarray(params_grid),
+            bands_idx_jax,
+            wl_ref_jax,
+            sky_ref_z_jax,
+            sky_z_jax,
+        )
+        scores_np = np.asarray(scores)
+        finite_mask = np.isfinite(scores_np)
+        if not np.any(finite_mask):
+            continue
+
+        level_best_idx = int(np.argmin(np.where(finite_mask, scores_np, np.inf)))
+        level_best_score = float(scores_np[level_best_idx])
+        level_best_params = params_grid[level_best_idx]
+
+        if level_best_score < best_score:
+            best_score = level_best_score
+            best_params = level_best_params.copy()
+
+        if level < len(grid_levels) - 1:
+            span = (upper_bounds - lower_bounds) / (n_points - 1)
+            lower_bounds = np.maximum(level_best_params - span, global_lower_bounds)
+            upper_bounds = np.minimum(level_best_params + span, global_upper_bounds)
+
+    if best_params is None:
+        raise RuntimeError(
+            "Grid search failed: all candidate scores are NaN/Inf. "
+            "Please check input sky/reference data quality and wavelength overlap."
+        )
+
+    c0_opt, c1_opt, c2_opt, w_opt = best_params
     cor_wav = c0_opt + c1_opt * bands_idx + c2_opt * (bands_idx**2)
-    simulated_sky = _forward_model_constant_srf(
-        result.x, bands_idx, wl_ref_highres, sky_ref_norm
-    )
-    simulated_sky_norm = (simulated_sky - simulated_sky.min()) / (
-        simulated_sky.max() - simulated_sky.min() + 1e-12
-    )
-    plt.figure(figsize=(10, 5))
-    plt.plot(
-        cor_wav,
-        simulated_sky_norm,
-        "b--",
-        linewidth=2,
-        label="Convolved Reference",
-    )
 
-    plt.plot(
-        cor_wav,
-        sky_norm,
-        "g.-",
-        linewidth=1.5,
-        label="Calibrated",
-        markersize=4,
+    simulated_sky_z = np.asarray(
+        forward_model_constant_srf(
+            jnp.asarray(best_params),
+            bands_idx_jax,
+            wl_ref_jax,
+            sky_ref_z_jax,
+        )
     )
-    plt.xlabel(r"Wavelength ($\mu m$)")
-    plt.ylabel("Normalized radiance")
-    plt.title("Reference convolved vs. sky after wavelength calibration")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-    return cor_wav, simulated_sky, c0_opt, c1_opt, c2_opt
+    simulated_sky = simulated_sky_z * ref_std + ref_mean
 
+    if show_plot:
+        plt.figure(figsize=(10, 5))
+        plt.plot(
+            cor_wav,
+            simulated_sky_z,
+            "b--",
+            linewidth=2,
+            label="Convolved reference (z-score)",
+        )
+        plt.plot(
+            cor_wav,
+            sky_z,
+            "g.-",
+            linewidth=1.5,
+            markersize=4,
+            label="Measured sky (z-score)",
+        )
+        plt.xlabel(r"Wavelength ($\mu m$)")
+        plt.ylabel("Z-score")
+        plt.title("Reference convolved vs. measured sky")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
-def check_denoise(hsi_noisy, hsi_denoised, band_idx):
-
-    hsi_noisy = np.array(hsi_noisy)
-    hsi_denoised = np.array(hsi_denoised)
-    band_noisy = hsi_noisy[..., band_idx]
-    band_denoised = hsi_denoised[..., band_idx]
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
-    im1 = ax1.imshow(band_noisy, cmap="gray")
-    ax1.set_title(f"Band {band_idx} (noisy)")
-    ax1.axis("off")
-    plt.colorbar(im1, ax=ax1, fraction=0.046, pad=0.04)
-    im2 = ax2.imshow(band_denoised, cmap="gray")
-    ax2.set_title(f"Band {band_idx} (denoised)")
-    ax2.axis("off")
-    plt.colorbar(im2, ax=ax2, fraction=0.046, pad=0.04)
-    plt.tight_layout()
-    plt.show()
+    return cor_wav, simulated_sky, float(w_opt)
