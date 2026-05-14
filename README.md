@@ -11,7 +11,7 @@ The public code provides the open components around data loading, noisy-band det
 
 `*` Equal contribution. Corresponding author: Fanglin Bao.
 
-![HAIR framework overview](./figures/hair_framework.png)
+![HAIR framework overview](./figures/github_main_figure.png)
 
 HAIR restores degraded TIR-HSI by combining sensor-aware restoration with a HADAR-based TeX physical representation. The framework models temperature, emissivity, and texture jointly, so denoising, inpainting, spectral calibration, and spectral super-resolution can be evaluated not only by radiance fidelity, but also by physical consistency.
 
@@ -149,18 +149,15 @@ repository.
 If you use this code or build on HAIR, please cite:
 
 ```bibtex
-@article{dai2026hair,
-  title   = {HADAR-Based Thermal Infrared Hyperspectral Image Restoration},
-  author  = {Dai, Cheng and Lin, Jiale and Song, Bingxuan and Chen, Yifei and Chen, Jiashuo and Yuan, Xin and Bao, Fanglin},
-  journal = {arXiv preprint arXiv:2605.13664},
-  year    = {2026},
-  url     = {https://arxiv.org/pdf/2605.13664}
+@misc{dai2026hadarbasedthermalinfraredhyperspectral,
+  title         = {HADAR-Based Thermal Infrared Hyperspectral Image Restoration},
+  author        = {Cheng Dai and Jiale Lin and Bingxuan Song and Yifei Chen and Jiashuo Chen and Xin Yuan and Fanglin Bao},
+  year          = {2026},
+  eprint        = {2605.13664},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2605.13664}
 }
 ```
-
-For the pushbroom-camera dataset used in the outdoor experiments, please also
-refer to the DARPA Invisible Headlights / HEADLIGHTS dataset page:
-<https://www.kitware.com/darpa-headlights-dataset/>.
 
 ## Update
 
