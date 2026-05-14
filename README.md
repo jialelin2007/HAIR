@@ -1,19 +1,31 @@
 # HAIR: HADAR-Based Thermal Infrared Hyperspectral Image Restoration
 
-This repository contains the public code release for **HAIR** (**HADAR-based Image Restoration**), a physics-driven restoration framework for ground-based thermal-infrared hyperspectral images (TIR-HSI).
+**HAIR** (**HADAR-based Image Restoration**) is a physics-driven framework for restoring ground-based thermal-infrared hyperspectral images (TIR-HSI). It is designed for HADAR-related applications where TIR-HSI must preserve not only visual quality, but also the thermodynamic consistency needed for temperature, emissivity, and texture (TeX) decomposition.
 
-HAIR targets TIR-HSI degradations such as stripe artifacts, Gaussian noise, invalid spectral bands, wavelength shifts, and spectral undersampling.
+arXiv: [HADAR-Based Thermal Infrared Hyperspectral Image Restoration](https://arxiv.org/abs/2605.13664)
+
+![HAIR framework overview](./figures/github_main_figure.png)
+
+## What HAIR Does
+
+Real-world TIR-HSI acquisitions are often degraded by sensor noise, stripe artifacts, dead or invalid bands, spectral undersampling, and wavelength shifts. These artifacts can corrupt both the radiance image and the downstream HADAR TeX decomposition. HAIR addresses this problem by combining sensor-aware restoration with the HADAR rendering equation and an atmospheric downwelling radiative-transfer reference.
+
+The framework is built around four main ideas:
+
+- **Physics-consistent restoration:** HAIR uses a TeX decompose-synthesize strategy to restore TIR-HSI while preserving temperature, emissivity, and texture consistency.
+- **Downwelling-guided spectral calibration:** HAIR aligns observed atmospheric signatures with a forward-modeled atmospheric downwelling reference to estimate spectral shifts, complete corrupted bands, and enhance spectra.
+- **Unified sensor degradation modeling:** HAIR analyzes pushbroom and FTIR TIR-HSI degradations, separating tractable perturbations such as noise and stripes from invalid spectral measurements.
+- **Comprehensive restoration tasks:** HAIR is evaluated for denoising, inpainting, spectral calibration, and spectral super-resolution, with experiments on outdoor DARPA Invisible Headlights data and in-lab FTIR measurements.
+
 The public code provides the open components around data loading, noisy-band detection, destriping, subspace/BM3D denoising, sky-spectrum extraction, spectral calibration utilities, and interactive visualization.
 
-**Paper:** [HADAR-Based Thermal Infrared Hyperspectral Image Restoration](https://arxiv.org/pdf/2605.13664)
+## Paper and Authors
+
+**Paper:** [HADAR-Based Thermal Infrared Hyperspectral Image Restoration](https://arxiv.org/abs/2605.13664)
 
 **Authors:** Cheng Dai*, Jiale Lin*, Bingxuan Song, Yifei Chen, Jiashuo Chen, Xin Yuan, and Fanglin Bao
 
 `*` Equal contribution. Corresponding author: Fanglin Bao.
-
-![HAIR framework overview](./figures/github_main_figure.png)
-
-HAIR restores degraded TIR-HSI by combining sensor-aware restoration with a HADAR-based TeX physical representation. The framework models temperature, emissivity, and texture jointly, so denoising, inpainting, spectral calibration, and spectral super-resolution can be evaluated not only by radiance fidelity, but also by physical consistency.
 
 ![Comprehensive spectral calibration and restoration results](./figures/band_calibration_results.png)
 
