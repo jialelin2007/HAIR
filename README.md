@@ -5,6 +5,20 @@ This repository contains the public code release for **HAIR** (**HADAR-based Ima
 HAIR targets TIR-HSI degradations such as stripe artifacts, Gaussian noise, invalid spectral bands, wavelength shifts, and spectral undersampling.
 The public code provides the open components around data loading, noisy-band detection, destriping, subspace/BM3D denoising, sky-spectrum extraction, spectral calibration utilities, and interactive visualization.
 
+**Paper:** [HADAR-Based Thermal Infrared Hyperspectral Image Restoration](https://arxiv.org/pdf/2605.13664)
+
+**Authors:** Cheng Dai*, Jiale Lin*, Bingxuan Song, Yifei Chen, Jiashuo Chen, Xin Yuan, and Fanglin Bao
+
+`*` Equal contribution. Corresponding author: Fanglin Bao.
+
+![HAIR framework overview](./figures/hair_framework.png)
+
+HAIR restores degraded TIR-HSI by combining sensor-aware restoration with a HADAR-based TeX physical representation. The framework models temperature, emissivity, and texture jointly, so denoising, inpainting, spectral calibration, and spectral super-resolution can be evaluated not only by radiance fidelity, but also by physical consistency.
+
+![Comprehensive spectral calibration and restoration results](./figures/band_calibration_results.png)
+
+The example above summarizes the spectral calibration and restoration behavior under severe band degradation. HAIR uses an atmospheric downwelling reference to estimate wavelength shifts, recover corrupted spectral regions, and stabilize the downstream TeX decomposition.
+
 ## Important Patent Notice
 
 The core HADAR TeX inversion module is **not included** in this public release
@@ -25,6 +39,7 @@ solver interface.
 
 ```text
 .
+├── figures/                    # README figures copied from the paper
 ├── main.ipynb                  # Example HAIR workflow notebook
 ├── hair_module.py              # Restoration and spectral calibration utilities
 ├── hadar_module_v2.py          # Data loading, plotting, sky processing, LUT helpers
@@ -123,11 +138,29 @@ The protected HADAR-specific functions are intentionally left as placeholders.
 
 - `highres_ref_sky.txt` is a two-column high-resolution atmospheric reference
 spectrum used by the calibration utility.
+- The outdoor pushbroom-camera experiments in the paper use the TIR subset of
+the DARPA Invisible Headlights / HEADLIGHTS dataset. Dataset information is
+available from Kitware: <https://www.kitware.com/darpa-headlights-dataset/>.
+- The full experimental datasets used in the paper are not redistributed in this
+repository.
 
 ## Citation
 
-The corresponding paper is under review and may be uploaded to arXiv later.
-Please check the final published version for updated bibliographic information.
+If you use this code or build on HAIR, please cite:
+
+```bibtex
+@article{dai2026hair,
+  title   = {HADAR-Based Thermal Infrared Hyperspectral Image Restoration},
+  author  = {Dai, Cheng and Lin, Jiale and Song, Bingxuan and Chen, Yifei and Chen, Jiashuo and Yuan, Xin and Bao, Fanglin},
+  journal = {arXiv preprint arXiv:2605.13664},
+  year    = {2026},
+  url     = {https://arxiv.org/pdf/2605.13664}
+}
+```
+
+For the pushbroom-camera dataset used in the outdoor experiments, please also
+refer to the DARPA Invisible Headlights / HEADLIGHTS dataset page:
+<https://www.kitware.com/darpa-headlights-dataset/>.
 
 ## Update
 
