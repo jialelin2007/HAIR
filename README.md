@@ -2,7 +2,7 @@
 
 **HAIR** (**HADAR-based Image Restoration**) is a physics-driven framework for restoring ground-based thermal-infrared hyperspectral images (TIR-HSI). It is designed for HADAR-related applications where TIR-HSI must preserve not only visual quality, but also the thermodynamic consistency needed for temperature, emissivity, and texture (TeX) decomposition.
 
-arXiv: [HADAR-Based Thermal Infrared Hyperspectral Image Restoration](https://arxiv.org/abs/2605.13664)
+<!-- arXiv: [HADAR-Based Thermal Infrared Hyperspectral Image Restoration](https://arxiv.org/abs/2605.13664) -->
 
 ![HAIR framework overview](./figures/github_main_figure.png)
 
